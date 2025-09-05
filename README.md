@@ -10,7 +10,7 @@ git clone [repository_url]
 cd perturb_pipeline
 
 # 2. Activate the existing kb conda environment
-conda activate /oak/stanford/groups/engreitz/Users/tonyzeng/miniconda3/envs/kb
+conda activate /home/groups/engreitz/Users/tony/anaconda3/envs/kb
 # Note: The kb environment is pre-installed with all necessary dependencies
 # If you need to set up your own environment, contact the maintainer for the environment.yml file
 
