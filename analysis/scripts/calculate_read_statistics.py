@@ -102,7 +102,7 @@ def calculate_statistics(kb_dir, sample_id=None, config_file=None, cell_barcodes
     n_cells = 'N/A'
     
     # Check for unfiltered count matrix
-    h5ad_path = Path(kb_dir) / "counts_unfiltered" / "adata.h5ad"
+    h5ad_path = Path(kb_dir) / "counts_unfiltered_modified" / "adata.h5ad"
     if not h5ad_path.exists():
         raise FileNotFoundError(f"Count matrix not found at {h5ad_path}")
     

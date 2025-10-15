@@ -72,7 +72,7 @@ def load_adata_from_filtered(matrix_dir, is_guide=False):
 def load_adata_all_barcodes(matrix_dir, is_guide=False):
     """Load all barcodes from unfiltered AnnData (no filtering)."""
     try:
-        h5ad_file = Path(matrix_dir) / "counts_unfiltered" / "adata.h5ad"
+        h5ad_file = Path(matrix_dir) / "counts_unfiltered_modified" / "adata.h5ad"
         
         if not h5ad_file.exists():
             raise FileNotFoundError(f"Unfiltered H5AD file not found: {h5ad_file}")

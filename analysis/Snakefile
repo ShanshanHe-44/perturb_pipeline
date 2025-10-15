@@ -319,7 +319,7 @@ rule kallisto_gex:
         script="scripts/run_kb_count.py"
     output:
         kb_info=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/kb_info.json",
-        h5ad=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/counts_unfiltered/adata.h5ad",
+        h5ad=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/counts_unfiltered_modified/adata.h5ad",
         # BUS files that will be inspected downstream
         bus_output=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/output.bus",
         bus_unfiltered=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/output.unfiltered.bus",
@@ -372,7 +372,7 @@ rule kallisto_guide:
         script="scripts/run_kb_count.py"
     output:
         kb_info=f"{SCRATCH}/{{sample_id}}/kb_guide_{{source}}_{{processing}}/kb_info.json",
-        h5ad=f"{SCRATCH}/{{sample_id}}/kb_guide_{{source}}_{{processing}}/counts_unfiltered/adata.h5ad",
+        h5ad=f"{SCRATCH}/{{sample_id}}/kb_guide_{{source}}_{{processing}}/counts_unfiltered_modified/adata.h5ad",
         # BUS files that will be inspected downstream
         bus_output=f"{SCRATCH}/{{sample_id}}/kb_guide_{{source}}_{{processing}}/output.bus",
         bus_unfiltered=f"{SCRATCH}/{{sample_id}}/kb_guide_{{source}}_{{processing}}/output.unfiltered.bus",
@@ -419,7 +419,7 @@ rule kallisto_gex_subsampled:
         script="scripts/run_kb_count.py"
     output:
         kb_info=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-{{fraction}}/kb_all/kb_info.json",
-        h5ad=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-{{fraction}}/kb_all/counts_unfiltered/adata.h5ad"
+        h5ad=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-{{fraction}}/kb_all/counts_unfiltered_modified/adata.h5ad"
     log:
         f"{LOGS}/kallisto_gex_subsampled_{{sample_id}}_{{fraction}}.log"
     wildcard_constraints:
@@ -465,7 +465,7 @@ rule kallisto_guide_subsampled:
         script="scripts/run_kb_count.py"
     output:
         kb_info=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-{{fraction}}/kb_guide/kb_info.json",
-        h5ad=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-{{fraction}}/kb_guide/counts_unfiltered/adata.h5ad"
+        h5ad=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-{{fraction}}/kb_guide/counts_unfiltered_modified/adata.h5ad"
     log:
         f"{LOGS}/kallisto_guide_subsampled_{{sample_id}}_{{fraction}}.log"
     wildcard_constraints:
@@ -529,9 +529,9 @@ rule inspect_bus_files:
 rule filter_and_annotate_sublibrary:
     input:
         # GEX unfiltered kallisto output - specific files for dependency tracking
-        gex_h5ad=f"{SCRATCH}/{{gex_sample_id}}/kb_all_{{source}}_{{processing}}/counts_unfiltered/adata.h5ad",
+        gex_h5ad=f"{SCRATCH}/{{gex_sample_id}}/kb_all_{{source}}_{{processing}}/counts_unfiltered_modified/adata.h5ad",
         # Guide unfiltered kallisto output - specific file for dependency tracking
-        guide_h5ad=lambda wildcards: f"{SCRATCH}/{gex_to_guide[wildcards.gex_sample_id]}/kb_guide_{wildcards.source}_{wildcards.processing}/counts_unfiltered/adata.h5ad",
+        guide_h5ad=lambda wildcards: f"{SCRATCH}/{gex_to_guide[wildcards.gex_sample_id]}/kb_guide_{wildcards.source}_{wildcards.processing}/counts_unfiltered_modified/adata.h5ad",
         # Config file
         config_file=workflow.configfiles[0],
         script="scripts/sublibrary_annotation.py"
@@ -589,7 +589,7 @@ rule calculate_read_statistics:
         kb_info=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/kb_info.json",
         # Get inspect JSON from inspect_bus_files rule output
         inspect_json=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/output_modified.unfiltered_inspect.json",
-        h5ad=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/counts_unfiltered/adata.h5ad",
+        h5ad=f"{SCRATCH}/{{sample_id}}/kb_{{type}}_{{source}}_{{processing}}/counts_unfiltered_modified/adata.h5ad",
         script="scripts/calculate_read_statistics.py"
     output:
         stats=f"{RESULTS}/{{sample_id}}/qc/{{sample_id}}_{{type}}_{{source}}_{{processing}}_read_statistics.tsv"
@@ -791,14 +791,14 @@ rule umi_saturation_analysis:
     input:
         # Main data (100% point) - using the main raw output
         kb_info=f"{SCRATCH}/{{sample_id}}/kb_all_main_raw/kb_info.json",
-        main_unfiltered=f"{SCRATCH}/{{sample_id}}/kb_all_main_raw/counts_unfiltered/adata.h5ad",
+        main_unfiltered=f"{SCRATCH}/{{sample_id}}/kb_all_main_raw/counts_unfiltered_modified/adata.h5ad",
         cell_calling_results=f"{RESULTS}/qc_report/data/per_sample/main_raw/{{sample_id}}/cell_calling/results.tsv",
         read_stats=f"{RESULTS}/{{sample_id}}/qc/{{sample_id}}_all_main_raw_read_statistics.tsv",
         # Subsampled matrices - Snakemake will automatically generate these (unfiltered)
-        subsampled_01=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.1/kb_all/counts_unfiltered/adata.h5ad",
-        subsampled_025=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.25/kb_all/counts_unfiltered/adata.h5ad",
-        subsampled_05=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.5/kb_all/counts_unfiltered/adata.h5ad",
-        subsampled_075=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.75/kb_all/counts_unfiltered/adata.h5ad",
+        subsampled_01=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.1/kb_all/counts_unfiltered_modified/adata.h5ad",
+        subsampled_025=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.25/kb_all/counts_unfiltered_modified/adata.h5ad",
+        subsampled_05=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.5/kb_all/counts_unfiltered_modified/adata.h5ad",
+        subsampled_075=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.75/kb_all/counts_unfiltered_modified/adata.h5ad",
         script="scripts/umi_saturation_analysis.py"
     output:
         saturation=f"{RESULTS}/qc_report/data/per_sample/main_raw/{{sample_id}}/saturation/umi_saturation.tsv",
@@ -831,15 +831,15 @@ rule umi_saturation_analysis_guide:
     input:
         # Main data (100% point) - using the main raw output
         kb_info=f"{SCRATCH}/{{sample_id}}/kb_guide_main_raw/kb_info.json",
-        main_unfiltered=f"{SCRATCH}/{{sample_id}}/kb_guide_main_raw/counts_unfiltered/adata.h5ad",
+        main_unfiltered=f"{SCRATCH}/{{sample_id}}/kb_guide_main_raw/counts_unfiltered_modified/adata.h5ad",
         read_stats=f"{RESULTS}/{{sample_id}}/qc/{{sample_id}}_guide_main_raw_read_statistics.tsv",
         # Depend on the paired GEX cell calling results
         cell_calling_results=lambda wildcards: f"{RESULTS}/qc_report/data/per_sample/main_raw/{guide_to_gex[wildcards.sample_id]}/cell_calling/results.tsv",
         # Subsampled guide matrices - Snakemake will automatically generate these (unfiltered)
-        subsampled_01=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.1/kb_guide/counts_unfiltered/adata.h5ad",
-        subsampled_025=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.25/kb_guide/counts_unfiltered/adata.h5ad",
-        subsampled_05=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.5/kb_guide/counts_unfiltered/adata.h5ad",
-        subsampled_075=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.75/kb_guide/counts_unfiltered/adata.h5ad",
+        subsampled_01=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.1/kb_guide/counts_unfiltered_modified/adata.h5ad",
+        subsampled_025=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.25/kb_guide/counts_unfiltered_modified/adata.h5ad",
+        subsampled_05=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.5/kb_guide/counts_unfiltered_modified/adata.h5ad",
+        subsampled_075=f"{SCRATCH}/tmp/umi_sat_{{sample_id}}-0.75/kb_guide/counts_unfiltered_modified/adata.h5ad",
         script="scripts/umi_saturation_analysis.py"
     output:
         saturation=f"{RESULTS}/qc_report/data/per_sample/main_raw/{{sample_id}}/saturation/guide_umi_saturation.tsv",

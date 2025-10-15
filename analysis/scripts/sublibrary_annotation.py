@@ -396,7 +396,7 @@ def main():
     try:
         # 1. LOAD AND FILTER GEX DATA
         log_print("\n📥 1. LOADING AND FILTERING GEX DATA...")
-        gex_h5ad_path = Path(args.gex_kb_dir) / "counts_unfiltered" / "adata.h5ad"
+        gex_h5ad_path = Path(args.gex_kb_dir) / "counts_unfiltered_modified" / "adata.h5ad"
         log_print(f"   Loading from: {gex_h5ad_path}")
         
         adata_gex = sc.read_h5ad(gex_h5ad_path)
@@ -409,7 +409,7 @@ def main():
         
         # 2. LOAD AND FILTER GUIDE DATA
         log_print("\n📥 2. LOADING AND FILTERING GUIDE DATA...")
-        guide_h5ad_path = Path(args.guide_kb_dir) / "counts_unfiltered" / "adata.h5ad"
+        guide_h5ad_path = Path(args.guide_kb_dir) / "counts_unfiltered_modified" / "adata.h5ad"
         log_print(f"   Loading from: {guide_h5ad_path}")
         
         adata_guide = sc.read_h5ad(guide_h5ad_path)
