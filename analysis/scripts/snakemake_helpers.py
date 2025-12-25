@@ -29,7 +29,7 @@ def get_scratch_path(*parts, config=None):
 
 
 
-def get_results_path(*parts, config=None):
+def get_results_path_origin(*parts, config=None):
     """Build results directory paths automatically from analysis_name"""
     if not config:
         raise ValueError("config is required for get_results_path")
@@ -42,7 +42,28 @@ def get_results_path(*parts, config=None):
         path_parts = [str(p) for p in parts]
         return os.path.join(results_base, *path_parts)
     return results_base
+import os
 
+def get_results_path(*parts, config=None):
+    """Build results directory paths automatically from analysis_name
+    If config['results_dir'] is set, use it as base; otherwise use cwd/results_{analysis_name}.
+    """
+    if not config:
+        raise ValueError("config is required for get_results_path")
+
+    analysis_name = config["analysis_name"]
+    results_dir = config.get("results_dir", None)
+
+    if results_dir:
+        results_base = os.path.join(results_dir, f"results_{analysis_name}")
+    else:
+        results_base = os.path.join(os.getcwd(), f"results_{analysis_name}")
+
+    if parts and parts[0]:
+        path_parts = [str(p) for p in parts]
+        return os.path.join(results_base, *path_parts)
+    return results_base
+    
 
 def get_logs_path(*parts, config=None):
     """Build logs directory paths automatically from analysis_name"""
