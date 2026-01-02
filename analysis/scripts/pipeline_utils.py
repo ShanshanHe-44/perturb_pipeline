@@ -511,7 +511,8 @@ def add_mitochondrial_metrics(adata):
             "CRITICAL: Gene symbols required for mitochondrial gene detection. Run gene annotation first."
         )
 
-    mt_genes = adata.var['gene'].str.startswith("MT-", na=False)
+    # mt_genes = adata.var['gene'].str.startswith("MT-", na=False)
+    mt_genes = adata.var['gene'].str.startswith(("MT-", "mt-", "Mt-"), na=False)
     log_print(f"📊 Using gene symbols: found {mt_genes.sum()} MT genes")
 
     if mt_genes.sum() == 0:
@@ -577,9 +578,176 @@ def apply_cell_filters(adata, config=None):
 # =============================================================================
 # 5. GENE ANNOTATION & FILTERING
 # =============================================================================
-
-
 def add_comprehensive_gene_annotations(adata, ribosomal_genes_path, gene_database_path, cell_cycle_genes_path):
+    """Add comprehensive gene annotations to var dataframe.
+    
+    Parameters:
+    -----------
+    adata : AnnData
+        Annotated data object
+    ribosomal_genes_path : str
+        Path to ribosomal genes file
+    gene_database_path : str
+        Path to gene database file
+    cell_cycle_genes_path : str
+        Path to cell cycle genes file
+    """
+    log_print("🧬 Adding comprehensive gene annotations...")
+
+    # Create reference files dict for internal use
+    REFERENCE_FILES = {
+        "ribosomal_genes": ribosomal_genes_path,
+        "gene_database": gene_database_path,
+        "cell_cycle_genes": cell_cycle_genes_path
+    }
+
+    # Load ribosomal genes from tab-separated file - use "HGNC ID" column
+    # ribosomal_hgnc_ids = set()
+    with open(REFERENCE_FILES["ribosomal_genes"]) as f:
+        ribosomal_genes_list = [x.strip() for x in f]
+    ribosomal_genes = set(ribosomal_genes_list)  # For fast lookup
+
+        # header = f.readline().strip().split('\t')
+        # hgnc_col = header.index("HGNC ID")
+        # for line in f:
+        #     cols = line.strip().split('\t')
+        #     if len(cols) > hgnc_col:
+        #         ribosomal_hgnc_ids.add(cols[hgnc_col])
+
+    log_print(f"  📋 Loaded {len(ribosomal_genes)} ribosomal gene")
+    log_print(f"  📋 Sample ribosomal gene: {list(ribosomal_genes)[:5]}")
+
+    # Load gencode database
+    db = gffutils.FeatureDB(REFERENCE_FILES["gene_database"])
+
+    # Initialize annotation columns
+    adata.var['gene_type'] = ''
+    # adata.var['hgnc_id'] = ''
+    adata.var['gene'] = ''  # Gene symbols
+    adata.var['chromosome'] = ''
+    adata.var['ribosomal'] = False
+    adata.var['cell_cycle'] = False
+    adata.var['cell_cycle_phase'] = ''
+    adata.var['pct_cells_expressed'] = 0.0
+
+    # Calculate % cells expressed (using expression threshold > 0)
+    log_print("  📊 Calculating % cells expressed...")
+    cells_expressed = (adata.X > 0).sum(axis=0)
+    if hasattr(cells_expressed, 'A1'):
+        cells_expressed = cells_expressed.A1
+    adata.var['pct_cells_expressed'] = (cells_expressed / adata.n_obs) * 100
+
+    # Load cell cycle genes for annotation
+    with open(REFERENCE_FILES["cell_cycle_genes"]) as f:
+        cell_cycle_genes_list = [x.strip() for x in f]
+    cell_cycle_genes = set(cell_cycle_genes_list)  # For fast lookup
+    s_phase_genes = set(cell_cycle_genes_list[:43])  # First 43 are S phase
+
+    # Annotate from gencode database first
+    log_print("  🗃️  Loading gene annotations from gencode database...")
+    log_print(f"  🔍 Sample gene IDs from adata.var.index: {list(adata.var.index[:5])}")
+
+    annotated_count = 0
+    missing_count = 0
+    error_count = 0
+
+    for i, gene_id in enumerate(adata.var.index):
+        if i < 5:  # Debug first 5 genes
+            log_print(f"  🔍 Trying to annotate gene {i+1}: {gene_id}")
+
+        try:
+            # Query database for this gene by ID
+            gene = db[gene_id]
+        except gffutils.exceptions.FeatureNotFoundError:
+            gene = db[gene_id.split(".", 1)[0]]
+            
+            if i < 5:
+                log_print(f"    ✅ Found gene {gene_id} in database")
+
+            # Extract annotations - handle missing attributes gracefully
+            # NOTE: We use .get() here because not all genes have all attributes (e.g., some lack hgnc_id)
+            # This is expected and OK - we should NOT raise errors for missing optional attributes
+            gene_type = gene.attributes.get('gene_biotype', [''])[0]
+            #hgnc_id = gene.attributes.get('hgnc_id', [''])[0]
+            gene_name = gene.attributes.get('gene_name', [''])[0]
+
+            if i < 5:
+                log_print(f"    📋 Gene info: type={gene_type}, name={gene_name}, chr={gene.seqid}")
+
+            # Update annotations
+            adata.var.loc[gene_id, 'gene_type'] = gene_type
+            # adata.var.loc[gene_id, 'hgnc_id'] = hgnc_id
+            adata.var.loc[gene_id, 'gene'] = gene_name  # Add gene symbols
+            adata.var.loc[gene_id, 'chromosome'] = gene.seqid
+
+            # Check ribosomal genes (by HGNC ID)
+            if gene_name in ribosomal_genes:
+                adata.var.loc[gene_id, 'ribosomal'] = True
+
+            # Check cell cycle genes (by gene name)
+            if gene_name in cell_cycle_genes:
+                adata.var.loc[gene_id, 'cell_cycle'] = True
+                # Determine phase using pre-computed S phase set
+                if gene_name in s_phase_genes:
+                    adata.var.loc[gene_id, 'cell_cycle_phase'] = 'S'
+                else:
+                    adata.var.loc[gene_id, 'cell_cycle_phase'] = 'G2M'
+
+            annotated_count += 1
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to annotate gene {gene_id}: {e}") from e
+
+    log_print(f"  📊 Annotation results: {annotated_count} success, {missing_count} missing, {error_count} errors")
+
+    # CRITICAL: Fail if gene annotation completely failed
+    if annotated_count == 0:
+        raise RuntimeError(f"CRITICAL: Gene annotation completely failed. 0/{adata.n_vars} genes annotated. Database lookup is broken.")
+
+    # CRITICAL: Fail if most genes failed annotation
+    success_rate = annotated_count / adata.n_vars
+    if success_rate < 0.5:  # Less than 50% success
+        raise RuntimeError(f"CRITICAL: Gene annotation mostly failed. Only {success_rate:.1%} ({annotated_count}/{adata.n_vars}) genes annotated successfully.")
+
+    # Calculate mitochondrial genes using annotated gene symbols
+    log_print("  🧬 Calculating mitochondrial gene scores...")
+    mt_genes = adata.var["gene"].str.startswith(("MT-", "mt-"), na=False)
+    log_print(f"  📊 Found {mt_genes.sum()} mitochondrial genes")
+
+    if mt_genes.sum() > 0:
+        mt_gene_names = adata.var_names[mt_genes].tolist()
+
+        log_print(f"  ✅ Added MT percentage and score using {len(mt_gene_names)} genes")
+    else:
+        raise RuntimeError("CRITICAL: No mitochondrial genes found for scoring. MT genes are required for quality control.")
+
+    # Calculate ribosomal scores using annotated genes
+    log_print("  🧬 Calculating ribosomal gene scores...")
+    ribo_genes = adata.var['ribosomal'] == True
+    log_print(f"  📊 Found {ribo_genes.sum()} ribosomal genes")
+
+    if ribo_genes.sum() > 0:
+        ribo_gene_names = adata.var_names[ribo_genes].tolist()
+
+        # Calculate ribosomal percentage
+        adata.obs['pct_counts_ribo'] = (adata[:, ribo_genes].X.sum(axis=1) / adata.X.sum(axis=1)) * 100
+        if hasattr(adata.obs['pct_counts_ribo'], 'A1'):
+            adata.obs['pct_counts_ribo'] = adata.obs['pct_counts_ribo'].A1
+
+        log_print(f"  ✅ Added ribosomal percentage and score using {len(ribo_gene_names)} genes")
+    else:
+        raise RuntimeError("CRITICAL: No ribosomal genes found for scoring. Ribosomal gene metrics are required for quality control.")
+
+    # Summary statistics
+    log_print(f"  ✅ Annotated {annotated_count}/{adata.n_vars} genes")
+    log_print(f"  📊 Gene types: {adata.var['gene_type'].value_counts().head().to_dict()}")
+    log_print(f"  📊 Ribosomal: {adata.var['ribosomal'].sum()}")
+    log_print(f"  📊 Cell cycle: {adata.var['cell_cycle'].sum()}")
+    log_print(f"  📊 Chromosomes: {adata.var['chromosome'].nunique()} unique")
+    log_print(f"  📊 Mean % cells expressed: {adata.var['pct_cells_expressed'].mean():.1f}%")
+
+
+def add_comprehensive_gene_annotations_origin(adata, ribosomal_genes_path, gene_database_path, cell_cycle_genes_path):
     """Add comprehensive gene annotations to var dataframe.
     
     Parameters:
