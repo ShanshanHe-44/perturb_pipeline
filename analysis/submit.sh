@@ -72,7 +72,7 @@ DEFAULT_ARGS=(
         filter_and_annotate_sublibrary \
         calculate_read_statistics \
         # STAGE 6: QC and analysis \
-        #fastp_qc \
+        fastp_qc \
         cell_calling_analysis \
         cell_calling_plots \
         calculate_qc_metrics_stratified \
