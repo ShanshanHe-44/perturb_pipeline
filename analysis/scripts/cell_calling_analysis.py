@@ -36,7 +36,8 @@ def load_h5ad_matrix(h5ad_file):
     
     # Calculate basic QC metrics if not already present
     if 'total_counts' not in adata.obs.columns:
-        adata.var['mt'] = adata.var_names.str.startswith('MT-')
+        adata.var['mt'] = adata.var_names.str.match('(?i)^mt-') # ignore capital letter for both human and mouse
+        #adata.var['mt'] = adata.var_names.str.startswith('MT-')
         sc.pp.calculate_qc_metrics(adata, percent_top=None, log1p=False, inplace=True)
     
     return adata
