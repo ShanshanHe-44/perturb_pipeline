@@ -16,6 +16,7 @@ import yaml
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from collections import defaultdict
 import scanpy as sc
 import os
 
@@ -534,8 +535,28 @@ def main():
         umis_pct = umi_percentages[method]
         print(f"  {method}: {n_cells} cells (threshold: {threshold:.0f}, "
               f"UMIs in cells: {umis_pct:.1f}%)")
-    
-    print("\Writing cell calling result to adata")
+    if group_col is not None and len(methods_results_by_biosample) > 0:
+        
+        print(f"\nSummary (by group sum: {group_col}):")
+
+        # all methods that appear in any group
+        methods_in_groups = sorted({m for md in methods_results_by_biosample.values() for m in md.keys()})
+
+        for method in methods_in_groups:
+            total_sum = 0
+            n_groups_used = 0
+
+            for g, mdict in methods_results_by_biosample.items():
+                if method not in mdict:
+                    continue
+                mask_g, _thr = mdict[method]
+                mask_g = np.asarray(mask_g, dtype=bool)  # global length
+                total_sum += int(mask_g.sum())
+                n_groups_used += 1
+
+            print(f"  {method}: total_called(sum over groups)={total_sum}, n_groups_used={n_groups_used}")
+        
+    print("\nWriting cell calling result to adata")
 
     for method, (is_cell, thr) in methods_results.items():
         adata.obs[f"is_cell_{method}"] = np.asarray(is_cell, dtype=bool)
@@ -554,8 +575,20 @@ def main():
                 if key not in adata.uns:
                     adata.uns[key] = {}
                 adata.uns[key][str(g)] = float(thr) if thr is not None else np.nan
-    adata.write_h5ad(output_dir / f"{args.sample_id}.cell_calling.h5ad")
-        
+    
+    adata_w_guide = sc.read_h5ad(args.h5ad_file)
+    if adata_w_guide.n_obs != adata.n_obs:
+        raise RuntimeError(f"n_obs mismatch: original={adata_w_guide.n_obs}, working={adata.n_obs}")
+    if not np.all(adata_w_guide.obs_names.values == adata.obs_names.values):
+        raise RuntimeError("obs_names order mismatch between original and working adata. Refuse to write results.")
+
+    adata.obsm['guide_counts'] = adata_w_guide.obsm['guide_counts']
+    adata.obsm['guide_assignment'] = adata_w_guide.obsm['guide_assignment']
+    adata_out_path = (output_dir / f"{args.sample_id}.cell_calling.h5ad").resolve()
+    adata.write_h5ad(adata_out_path)
+    
+    print(f"\n✅ Writing cell-calling AnnData with guide info to: {adata_out_path}")
+
     # Clean up memory
     del adata
     import gc

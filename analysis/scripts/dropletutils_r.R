@@ -46,6 +46,7 @@ dir.create(args$output_dir, recursive = TRUE, showWarnings = FALSE)
 plot_dir <- file.path(args$plot_dir, "dropletutills_plots")
 dir.create(plot_dir, recursive = TRUE, showWarnings = FALSE)
 
+cat("Plot storage path:", plot_dir,  "\n")
 cat("Loading count matrix from:", args$kb_dir, "\n")
 
 # Load kallisto count matrix directly

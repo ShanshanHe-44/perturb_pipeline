@@ -19,9 +19,9 @@ analysis:
   #
   # Chemistry v3:
   # Amplicon: NNNNNNNNNN33333333ATGAGGGGTCAG22222222TCCAACCACCTC11111111
+  # need to be double check 
   # kb_chemistry: "1,10,18,1,30,38,1,50,58:1,0,10:0,0,0"
   kb_chemistry: "1,10,18,1,48,56,1,78,86:1,0,10:0,0,0"  # Using v2 chemistry
-
 
   # IT IS OPTIONAL TO ADJUST THESE -> -> ->
   combinations:  # Which source/processing combinations to run
@@ -107,21 +107,24 @@ cell_calling:
     saturation_points: [0.1, 0.25, 0.5, 0.75, 1.0]
 
 # Barcode recovery parameters
+# no use now
 barcode_recovery:
   max_reads_recovery: null  # null = process all reads
   max_shift: 4
 
 # Undetermined recovery parameters
+# no use now
+
 undetermined_recovery:
   max_open_files: 5000
 
 # QC analysis parameters
 qc_analysis:
-  guide_cutoffs: [1, 2, 3, 4, 5]
+  guide_cutoffs: [1, 2, 3, 4, 5] # for plot making 
 
 # Sublibrary filtering parameters
 sublibrary_filtering:
-  guide_assignment_cutoff: 5
+  guide_assignment_cutoff: 5 # change to 1 
   skip_barcode_filtering: true
   min_umi_filter: 100
 
@@ -143,7 +146,7 @@ qc_filtering:
 resources:
   # Heavy compute rules (kallisto alignment)
   alignment:
-    mem_mb: 64000   # 64GB (reduced for smaller datasets)
+    mem_mb: 64000   # 64GB (reduced for smaller datasets) -> 128
     threads: 8      # Reduced threads for smaller datasets
   
   # Heavy memory rules (matrix operations, cell calling)
@@ -164,31 +167,31 @@ combination:
       name: "all_combined"
   combine_all_pools: true
 
-# Combined sublibraries configuration
-combined_sublibraries:
-  # Cell calling method to use for creating combined sublibrary files
-  # Options: Expected_Cells, UMI_Threshold, EmptyDrops_FDR_X (where X is FDR cutoff),
-  #          BarcodeRanks_Knee, BarcodeRanks_Inflection
-  cell_calling_method: "Expected_Cells"
-  # Output directory for combined sublibrary files (relative to results_base)
-  output_dir: "combined_sublibraries"
-  # Pools to include (empty list means all pools)
-  pools: []
-  # Mitochondrial cutoff key for filtering
-  mito_cutoff_key: "median_mad_2"
+# # Combined sublibraries configuration
+# combined_sublibraries:
+#   # Cell calling method to use for creating combined sublibrary files
+#   # Options: Expected_Cells, UMI_Threshold, EmptyDrops_FDR_X (where X is FDR cutoff),
+#   #          BarcodeRanks_Knee, BarcodeRanks_Inflection
+#   cell_calling_method: "Expected_Cells"
+#   # Output directory for combined sublibrary files (relative to results_base)
+#   output_dir: "combined_sublibraries"
+#   # Pools to include (empty list means all pools)
+#   pools: []
+#   # Mitochondrial cutoff key for filtering
+#   mito_cutoff_key: "median_mad_2"
 
-# Perturbation preprocessing configuration
-preprocessing:
-  target_genes: ["TP53", "CDKN1A", "FDPS", "RABGGTA", "MRPL34", "QARS"]  # Target genes for analysis
-  use_gpu: false  # Use GPU acceleration (requires RAPIDS)
-  target_clusters: 3  # Target number of clusters for leiden clustering
-  n_hvgs: 2000  # Number of highly variable genes
-  clustering_resolutions: [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]  # Leiden clustering resolutions to try
+# # Perturbation preprocessing configuration
+# preprocessing:
+#   target_genes: ["TP53", "CDKN1A", "FDPS", "RABGGTA", "MRPL34", "QARS"]  # Target genes for analysis
+#   use_gpu: false  # Use GPU acceleration (requires RAPIDS)
+#   target_clusters: 3  # Target number of clusters for leiden clustering
+#   n_hvgs: 2000  # Number of highly variable genes
+#   clustering_resolutions: [0.05, 0.1, 0.15, 0.2, 0.3, 0.5]  # Leiden clustering resolutions to try
   
-  # Stratification for perturbation analysis
-  stratification:
-    column: "condition"
-    values: ["72hr_wt", "168hr_wt"]
+#   # Stratification for perturbation analysis
+#   stratification:
+#     column: "condition"
+#     values: ["72hr_wt", "168hr_wt"]
   
-  # Non-targeting guide identifiers
-  non_targeting_strings: ["non-targeting", "non.targeting"]
+#   # Non-targeting guide identifiers
+#   non_targeting_strings: ["non-targeting", "non.targeting"]
