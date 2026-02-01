@@ -3,6 +3,8 @@ analysis_name: "yann_k562_analysis"
 sample_info_file: "references_yann_k562/sample_info.k562_yann.xlsx"
 plate_maps_file: "references_yann_k562/plate_map.xlsx"
 guide_file: "references_yann_k562/k562_yann_guides.txt"
+# result dir
+#results_dir: "/oak/stanford/groups/engreitz/Users/ronghao/Sequencing/20251218_eRZ59_Split-seq_4M_Novaseq/perturb_pipeline/result/"
 
 # Sample selection (leave empty to process all samples in sample_info_file)
 sample_ids: []
@@ -70,9 +72,17 @@ input_paths:
   cell_cycle_genes: "/oak/stanford/groups/engreitz/Users/tonyzeng/GW_PERTURB/references/regev_lab_cell_cycle_genes.txt"
   gene_database: "/oak/stanford/groups/engreitz/Users/tonyzeng/GW_PERTURB/references/gencode.v46.annotation.db"
 
-  # Reference genome/index locations
-  reference_base: "/oak/stanford/groups/engreitz/Users/tonyzeng/GW_PERTURB/references"
-  nascent_genome: "nascent_all"  # Subdirectory with genome index files
+  # mouse
+  # # Reference genome/index locations
+
+  #   # Gene annotation reference files
+  # ribosomal_genes: "/oak/stanford/groups/engreitz/Users/ronghao/Split-seq/perturb_pipeline/mouse_reference/genes_list_ribosomal.filtered.txt"
+  # cell_cycle_genes: "/oak/stanford/groups/engreitz/Users/ronghao/Split-seq/perturb_pipeline/mouse_reference/regev_lab_cell_cycle_genes_convert_to_mouse.txt"
+  # gene_database:    "/oak/stanford/groups/engreitz/Users/ronghao/Split-seq/perturb_pipeline/mouse_reference/Mus_musculus.GRCm39.108.annotation.db"
+
+  # # Reference genome/index locations
+  # reference_base: "/oak/stanford/groups/engreitz/Users/ronghao/Split-seq/perturb_pipeline/mouse_reference"
+  # nascent_genome: "nascent_all"  # Subdirectory with genome index files
   
 
 
